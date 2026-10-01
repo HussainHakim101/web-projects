@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="starGlow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <g filter="url(#glow)">
+    <!-- Constellation lines - zigzag water bearer pattern -->
+    <line x1="100" y1="160" x2="140" y2="200" stroke="#ffffff" stroke-opacity="0.6" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="140" y1="200" x2="180" y2="170" stroke="#ffffff" stroke-opacity="0.6" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="180" y1="170" x2="240" y2="220" stroke="#ffffff" stroke-opacity="0.6" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="240" y1="220" x2="280" y2="190" stroke="#ffffff" stroke-opacity="0.6" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="280" y1="190" x2="320" y2="240" stroke="#ffffff" stroke-opacity="0.6" stroke-width="1.5" stroke-linecap="round"/>
+    <!-- Water stream -->
+    <line x1="320" y1="240" x2="300" y2="300" stroke="#ffffff" stroke-opacity="0.6" stroke-width="1.5" stroke-linecap="round"/>
+    <!-- Upper connection -->
+    <line x1="100" y1="160" x2="140" y2="130" stroke="#ffffff" stroke-opacity="0.6" stroke-width="1.5" stroke-linecap="round"/>
+    <!-- Major stars -->
+    <circle cx="100" cy="160" r="4" fill="#ffffff" fill-opacity="0.8" filter="url(#starGlow)"/>
+    <circle cx="140" cy="200" r="4" fill="#ffffff" fill-opacity="0.8" filter="url(#starGlow)"/>
+    <circle cx="180" cy="170" r="4" fill="#ffffff" fill-opacity="0.8" filter="url(#starGlow)"/>
+    <circle cx="240" cy="220" r="5" fill="#ffffff" fill-opacity="0.9" filter="url(#starGlow)"/>
+    <circle cx="280" cy="190" r="4" fill="#ffffff" fill-opacity="0.8" filter="url(#starGlow)"/>
+    <circle cx="320" cy="240" r="4" fill="#ffffff" fill-opacity="0.8" filter="url(#starGlow)"/>
+    <circle cx="300" cy="300" r="4" fill="#ffffff" fill-opacity="0.8" filter="url(#starGlow)"/>
+    <circle cx="140" cy="130" r="4" fill="#ffffff" fill-opacity="0.8" filter="url(#starGlow)"/>
+    <!-- Minor stars - water droplets -->
+    <circle cx="120" cy="180" r="2.5" fill="#ffffff" fill-opacity="0.5"/>
+    <circle cx="160" cy="185" r="2.5" fill="#ffffff" fill-opacity="0.5"/>
+    <circle cx="210" cy="195" r="2.5" fill="#ffffff" fill-opacity="0.5"/>
+    <circle cx="260" cy="205" r="2.5" fill="#ffffff" fill-opacity="0.5"/>
+    <circle cx="300" cy="215" r="2.5" fill="#ffffff" fill-opacity="0.5"/>
+    <circle cx="310" cy="270" r="2.5" fill="#ffffff" fill-opacity="0.5"/>
+    <circle cx="290" cy="320" r="2.5" fill="#ffffff" fill-opacity="0.5"/>
+    <circle cx="120" cy="145" r="2.5" fill="#ffffff" fill-opacity="0.5"/>
+  </g>
+</svg>

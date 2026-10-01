@@ -1,0 +1,1188 @@
+/* ============================================================
+   ZODIAC — A Celestial Journey
+   Cosmic theme · glass cards · scroll-driven deck · morphing detail panel
+   ============================================================ */
+
+/* ---------- Design tokens ---------- */
+:root {
+  --color-bg: #06070d;
+  --color-surface: rgba(255, 255, 255, 0.04);
+  --color-glass: rgba(255, 255, 255, 0.06);
+  --color-glass-border: rgba(255, 255, 255, 0.1);
+  --color-text: #ece9f6;
+  --color-text-muted: rgba(236, 233, 246, 0.6);
+  --color-accent: #8b5cf6;
+  --color-accent-glow: rgba(139, 92, 246, 0.35);
+
+  --font-display: 'Cinzel', 'Times New Roman', serif;
+  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-accent: 'Playfair Display', Georgia, serif;
+  --font-symbol: 'Segoe UI Symbol', 'Noto Sans Symbols 2', 'Apple Symbols', 'DejaVu Sans', serif;
+
+  --nav-height: 64px;
+  --card-w: min(360px, 78vw);
+  --card-h: min(500px, calc(100vh - 190px));
+  --card-radius: 24px;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@supports (height: 100svh) {
+  :root { --card-h: min(500px, calc(100svh - 190px)); }
+}
+
+/* ---------- Reset ---------- */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-snap-type: y proximity;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+body.no-scroll,
+body.menu-open { overflow: hidden; }
+
+a { color: inherit; text-decoration: none; }
+button { background: none; border: none; color: inherit; cursor: pointer; font: inherit; }
+img { display: block; max-width: 100%; }
+ul { list-style: none; }
+
+:focus-visible {
+  outline: 2px solid #c4b5fd;
+  outline-offset: 3px;
+}
+
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 10000;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  background: #1a1530;
+  transform: translateY(-150%);
+  transition: transform 0.2s;
+}
+.skip-link:focus { transform: none; }
+
+/* ---------- Scroll progress ---------- */
+.scroll-progress {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 2px;
+  z-index: 1100;
+  pointer-events: none;
+}
+
+.scroll-progress__bar {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #8b5cf6, #ec4899, #f59e0b);
+  transform: scaleX(0);
+  transform-origin: left;
+  box-shadow: 0 0 10px rgba(236, 72, 153, 0.6);
+}
+
+/* ---------- Cosmic background ---------- */
+#cosmicCanvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.nebula {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  overflow: hidden;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 120%, #140d2b 0%, transparent 60%);
+}
+
+.nebula__blob {
+  position: absolute;
+  width: 70vmax;
+  height: 70vmax;
+  border-radius: 50%;
+  opacity: 0.55;
+  will-change: transform;
+}
+
+.nebula__blob--1 {
+  top: -25vmax; left: -20vmax;
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.22) 0%, transparent 65%);
+  animation: drift1 38s ease-in-out infinite alternate;
+}
+.nebula__blob--2 {
+  bottom: -30vmax; right: -25vmax;
+  background: radial-gradient(circle, rgba(219, 39, 119, 0.14) 0%, transparent 65%);
+  animation: drift2 46s ease-in-out infinite alternate;
+}
+.nebula__blob--3 {
+  top: 30%; left: 40%;
+  width: 50vmax; height: 50vmax;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.1) 0%, transparent 65%);
+  animation: drift1 54s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes drift1 { to { transform: translate3d(12vw, 8vh, 0) scale(1.15); } }
+@keyframes drift2 { to { transform: translate3d(-10vw, -12vh, 0) scale(1.1); } }
+
+/* ---------- Navigation ---------- */
+.nav {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: var(--nav-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 clamp(1.5rem, 4vw, 3rem);
+  z-index: 1000;
+  border-bottom: 1px solid transparent;
+  transition: background 0.4s ease, border-color 0.4s ease, backdrop-filter 0.4s ease;
+}
+
+.nav--scrolled {
+  background: rgba(8, 9, 18, 0.6);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border-bottom-color: var(--color-glass-border);
+}
+
+.nav__logo {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  background: linear-gradient(135deg, #fff 0%, #c4b5fd 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.nav__links { display: flex; gap: 2.5rem; }
+
+.nav__link {
+  position: relative;
+  font-size: 0.78rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  transition: color 0.3s ease;
+}
+
+.nav__link::after {
+  content: '';
+  position: absolute;
+  left: 0; bottom: -6px;
+  width: 100%; height: 1px;
+  background: linear-gradient(90deg, transparent, #c4b5fd, transparent);
+  transform: scaleX(0);
+  transition: transform 0.35s var(--ease-out);
+}
+
+.nav__link:hover, .nav__link--active { color: var(--color-text); }
+.nav__link:hover::after, .nav__link--active::after { transform: scaleX(1); }
+
+.nav__hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  width: 44px;
+  height: 44px;
+  justify-content: center;
+  align-items: center;
+  z-index: 1001;
+}
+
+.nav__hamburger span {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: var(--color-text);
+  border-radius: 2px;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.nav__hamburger--open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.nav__hamburger--open span:nth-child(2) { opacity: 0; }
+.nav__hamburger--open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+.mobile-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6, 7, 13, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.35s ease, visibility 0s linear 0.35s;
+}
+
+.mobile-menu--open {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.35s ease;
+}
+
+.mobile-menu__links { display: flex; flex-direction: column; gap: 2rem; text-align: center; }
+
+.mobile-menu__link {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  letter-spacing: 0.12em;
+  color: var(--color-text-muted);
+}
+.mobile-menu__link:hover, .mobile-menu__link:focus-visible { color: var(--color-text); }
+
+/* ---------- Hero ---------- */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: calc(var(--nav-height) + 2rem) 1.5rem 6rem;
+  overflow: hidden;
+  scroll-snap-align: start;
+}
+
+.hero__zodiac-wheel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(680px, 115vw);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  opacity: 0;
+  animation: wheelIn 2.4s var(--ease-out) 0.2s forwards;
+}
+
+.hero__zodiac-wheel svg {
+  width: 100%;
+  height: 100%;
+  animation: wheelSpin 180s linear infinite;
+}
+
+.wheel__rings circle,
+.wheel__marks line,
+.wheel__spokes line {
+  fill: none;
+  stroke: rgba(196, 181, 253, 0.16);
+  stroke-width: 1;
+}
+
+.wheel__marks line { stroke: rgba(196, 181, 253, 0.22); }
+
+.wheel__glyphs text {
+  font-family: var(--font-symbol);
+  font-size: 26px;
+  text-anchor: middle;
+  dominant-baseline: central;
+  opacity: 0.45;
+}
+
+@keyframes wheelSpin { to { transform: rotate(360deg); } }
+@keyframes wheelIn {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.85); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+.hero::after {
+  /* soft vignette so the heading always stays legible over the wheel */
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(6, 7, 13, 0.75) 0%, transparent 38%);
+  pointer-events: none;
+}
+
+.hero__content { position: relative; z-index: 2; }
+
+.hero__preheading {
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: #c4b5fd;
+  margin-bottom: 1.2rem;
+  opacity: 0;
+  animation: fadeUp 1s var(--ease-out) 0.3s forwards;
+}
+
+.hero__title {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 8vw, 6rem);
+  font-weight: 700;
+  line-height: 1.08;
+  background: linear-gradient(160deg, #ffffff 10%, #ddd6fe 45%, #a78bfa 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 30px rgba(139, 92, 246, 0.35));
+  margin-bottom: 1.2rem;
+  opacity: 0;
+  animation: fadeUp 1.1s var(--ease-out) 0.5s forwards;
+}
+
+.hero__subtitle {
+  font-family: var(--font-accent);
+  font-style: italic;
+  font-size: clamp(1.05rem, 2.4vw, 1.4rem);
+  color: var(--color-text-muted);
+  max-width: 34ch;
+  margin: 0 auto 2.6rem;
+  opacity: 0;
+  animation: fadeUp 1.1s var(--ease-out) 0.75s forwards;
+}
+
+.hero__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.95rem 2.4rem;
+  border-radius: 100px;
+  border: 1px solid rgba(196, 181, 253, 0.5);
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.22), rgba(236, 72, 153, 0.12));
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #fff;
+  box-shadow: 0 0 0 0 var(--color-accent-glow);
+  transition: transform 0.35s var(--ease-out), box-shadow 0.35s ease, background 0.35s ease;
+  opacity: 0;
+  animation: fadeUp 1.1s var(--ease-out) 1s forwards;
+}
+
+.hero__cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 40px var(--color-accent-glow);
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.35), rgba(236, 72, 153, 0.2));
+}
+
+.hero__cta-arrow { display: inline-block; animation: bob 2s ease-in-out infinite; }
+
+@keyframes bob { 50% { transform: translateY(4px); } }
+
+.hero__scroll-hint {
+  position: absolute;
+  bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  opacity: 0;
+  animation: fadeUp 1s var(--ease-out) 1.4s forwards;
+}
+
+.hero__mouse {
+  width: 22px;
+  height: 34px;
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  padding-top: 6px;
+}
+
+.hero__mouse-wheel {
+  width: 3px;
+  height: 7px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.6);
+  animation: mouseScroll 1.8s ease-in-out infinite;
+}
+
+@keyframes mouseScroll {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(11px); }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ---------- Section headings ---------- */
+.section-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 600;
+  text-align: center;
+  background: linear-gradient(135deg, #fff, #c4b5fd);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 0.6rem;
+}
+
+.section-subtitle {
+  text-align: center;
+  color: var(--color-text-muted);
+  max-width: 40ch;
+  margin: 0 auto 3rem;
+}
+
+/* ============================================================
+   ZODIAC DECK
+   ============================================================ */
+.zodiac-deck {
+  position: relative;
+  /* height is set by JS: one "spacing" of scroll per card + one viewport */
+}
+
+.deck-snaps { position: absolute; inset: 0; pointer-events: none; }
+.deck-snap { position: absolute; left: 0; width: 1px; height: 1px; scroll-snap-align: start; }
+
+.deck-stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+  --stage-accent-rgb: 139, 92, 246;
+}
+
+/* Soft accent halo behind the focused card that shifts with each sign */
+.deck-stage::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: calc(50% + var(--nav-height) / 2);
+  width: min(900px, 160vw);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(var(--stage-accent-rgb), 0.16) 0%, transparent 55%);
+  transition: background 0.8s ease;
+  pointer-events: none;
+}
+
+/* ---------- HUD (title, counter, hint) ---------- */
+.deck-hud {
+  position: absolute;
+  left: clamp(1.5rem, 5vw, 5rem);
+  top: 50%;
+  transform: translateY(-50%);
+  max-width: 280px;
+  z-index: 300;
+  pointer-events: none;
+}
+
+.deck-hud__title {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: #c4b5fd;
+  margin-bottom: 1rem;
+}
+
+.deck-hud__counter { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.4rem; }
+
+.deck-hud__num {
+  font-family: var(--font-display);
+  font-size: 3.4rem;
+  line-height: 1;
+  color: rgb(var(--stage-accent-rgb));
+  transition: color 0.6s ease;
+  text-shadow: 0 0 30px rgba(var(--stage-accent-rgb), 0.5);
+}
+
+.deck-hud__total { font-family: var(--font-display); color: var(--color-text-muted); }
+
+.deck-hud__name {
+  flex-basis: 100%;
+  font-family: var(--font-accent);
+  font-style: italic;
+  font-size: 1.3rem;
+  color: var(--color-text);
+}
+
+.deck-hud__hint {
+  margin-top: 1.4rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+/* ---------- Progress dots ---------- */
+.deck-dots {
+  position: absolute;
+  right: clamp(1rem, 4vw, 4rem);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 300;
+}
+
+.deck-dot {
+  width: 28px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+}
+
+.deck-dot::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  transition: transform 0.35s var(--ease-out), background 0.35s ease, box-shadow 0.35s ease;
+}
+
+.deck-dot:hover::before { background: rgba(255, 255, 255, 0.6); }
+
+.deck-dot.is-active::before {
+  background: var(--accent);
+  transform: scale(1.7);
+  box-shadow: 0 0 12px var(--accent);
+}
+
+/* ---------- Card ---------- */
+.zodiac-card {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + var(--nav-height) / 2);
+  width: var(--card-w);
+  height: var(--card-h);
+  margin-left: calc(var(--card-w) / -2);
+  margin-top: calc(var(--card-h) / -2);
+  cursor: pointer;
+  will-change: transform, opacity;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+.zodiac-card.is-hidden { opacity: 0 !important; pointer-events: none; }
+
+/* Shared face layout (deck card + morphing face in the expanded panel) */
+.zodiac-card__inner,
+.expanded-card__face {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem 1.75rem;
+  overflow: hidden;
+}
+
+.zodiac-card__inner {
+  --rx: 0deg;
+  --ry: 0deg;
+  --lift: 0px;
+  --mx: 50%;
+  --my: 30%;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--card-radius);
+  /* Opaque base keeps text of cards behind from ghosting through */
+  background:
+    linear-gradient(160deg, rgba(var(--accent-rgb), 0.2) 0%, rgba(14, 15, 30, 0) 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0) 30%),
+    #0b0c18;
+  border: 1px solid rgba(var(--accent-rgb), 0.28);
+  box-shadow:
+    0 24px 60px -20px rgba(0, 0, 0, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry)) translateY(var(--lift));
+  transition: transform 0.45s var(--ease-out), box-shadow 0.5s ease, border-color 0.5s ease;
+}
+
+/* Cursor-following sheen */
+.zodiac-card__inner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--mx) var(--my), rgba(255, 255, 255, 0.12), transparent 45%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+/* Dim layer — cards further back in the deck are darker */
+.zodiac-card__inner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #05060c;
+  opacity: var(--dim, 0);
+  pointer-events: none;
+}
+
+.zodiac-card.is-focused .zodiac-card__inner {
+  border-color: rgba(var(--accent-rgb), 0.5);
+  box-shadow:
+    0 30px 80px -20px rgba(0, 0, 0, 0.85),
+    0 0 50px -6px rgba(var(--accent-rgb), 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.zodiac-card__art {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  width: 115%;
+  max-width: none;
+  transform: translate(-50%, -50%);
+  opacity: 0.14;
+  pointer-events: none;
+  transition: opacity 0.6s ease, transform 0.8s var(--ease-out), filter 0.6s ease;
+}
+
+.zodiac-card__index {
+  position: absolute;
+  top: 1.1rem;
+  right: 1.3rem;
+  font-family: var(--font-display);
+  font-size: 0.66rem;
+  letter-spacing: 0.18em;
+  color: var(--color-text-muted);
+}
+
+.zodiac-card__symbol {
+  position: relative;
+  font-family: var(--font-symbol);
+  font-size: clamp(3.6rem, 9vh, 5rem);
+  line-height: 1.1;
+  color: var(--accent);
+  text-shadow: 0 0 18px rgba(var(--accent-rgb), 0.55);
+  margin-bottom: 0.9rem;
+  transition: text-shadow 0.5s ease, transform 0.6s var(--ease-out);
+}
+
+.zodiac-card__name {
+  position: relative;
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+}
+
+.zodiac-card__dates {
+  position: relative;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  margin: 0.3rem 0 1rem;
+}
+
+.zodiac-card__element {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.9rem;
+  border-radius: 100px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: var(--element-bg);
+  border: 1px solid var(--element-border);
+  color: var(--element-text);
+  margin-bottom: 1.2rem;
+}
+
+.zodiac-card__tagline {
+  position: relative;
+  font-family: var(--font-accent);
+  font-style: italic;
+  font-size: 0.98rem;
+  line-height: 1.5;
+  color: rgba(236, 233, 246, 0.75);
+  max-width: 24ch;
+}
+
+.zodiac-card__hint {
+  position: absolute;
+  bottom: 1.2rem;
+  left: 0;
+  right: 0;
+  font-size: 0.62rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: rgba(var(--accent-rgb), 0.9);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.4s ease, transform 0.4s var(--ease-out);
+}
+
+.zodiac-card.is-focused .zodiac-card__hint { opacity: 0.8; transform: none; }
+
+/* Hover / keyboard focus on the focused card */
+.zodiac-card.is-focused:hover .zodiac-card__inner,
+.zodiac-card.is-focused:focus-visible .zodiac-card__inner { --lift: -8px; }
+
+.zodiac-card.is-focused:focus-visible .zodiac-card__inner {
+  outline: 2px solid rgba(var(--accent-rgb), 0.9);
+  outline-offset: 4px;
+}
+
+.zodiac-card.is-focused:hover .zodiac-card__inner::before { opacity: 1; }
+
+.zodiac-card.is-focused:hover .zodiac-card__art,
+.zodiac-card.is-focused:focus-visible .zodiac-card__art {
+  opacity: 0.55;
+  transform: translate(-50%, -50%) scale(1.06);
+  filter: drop-shadow(0 0 6px rgba(var(--accent-rgb), 0.9));
+}
+
+.zodiac-card.is-focused:hover .zodiac-card__symbol {
+  transform: translateZ(0) scale(1.08);
+  text-shadow: 0 0 32px rgba(var(--accent-rgb), 0.95), 0 0 6px rgba(255, 255, 255, 0.6);
+}
+
+/* Touch devices: no hover — show constellation a little more */
+@media (hover: none) {
+  .zodiac-card.is-focused .zodiac-card__art { opacity: 0.32; }
+}
+
+/* ============================================================
+   EXPANDED CARD
+   ============================================================ */
+.card-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+}
+
+.card-overlay[hidden] { display: none; }
+
+.card-overlay__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 5, 12, 0.8);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+}
+
+.expanded-card {
+  --pw: min(92vw, 780px);
+  --ph: min(88vh, 880px);
+  position: absolute;
+  left: calc(50% - var(--pw) / 2);
+  top: calc(50% - var(--ph) / 2);
+  width: var(--pw);
+  height: var(--ph);
+  border-radius: 28px;
+  overflow: hidden;
+  transform-origin: 50% 50%;
+  will-change: transform;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(var(--accent-rgb), 0.22) 0%, transparent 55%),
+    linear-gradient(160deg, rgba(var(--accent-rgb), 0.14) 0%, rgba(14, 15, 30, 0.97) 40%, rgba(8, 9, 18, 0.99) 100%);
+  border: 1px solid rgba(var(--accent-rgb), 0.4);
+  box-shadow: 0 40px 120px -20px rgba(0, 0, 0, 0.9), 0 0 80px -20px rgba(var(--accent-rgb), 0.45);
+}
+
+@supports (height: 100svh) {
+  .expanded-card { --ph: min(88svh, 880px); }
+}
+
+/* The card face that morphs; sized & counter-scaled by JS */
+.expanded-card__face {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform-origin: 50% 50%;
+  pointer-events: none;
+}
+
+.expanded-card__face .zodiac-card__art { opacity: 0.14; }
+.expanded-card__face .zodiac-card__hint { display: none; }
+
+.expanded-card__content {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 clamp(1.25rem, 5vw, 3.25rem) 3rem;
+  opacity: 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--accent-rgb), 0.4) transparent;
+}
+
+.expanded-card__content:focus-visible { outline: none; box-shadow: inset 0 0 0 2px rgba(var(--accent-rgb), 0.6); }
+
+.expanded-card__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 3;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 1.7rem;
+  line-height: 1;
+  color: #fff;
+  background: rgba(10, 10, 20, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 0;
+  transform: scale(0.6) rotate(-90deg);
+  transition: opacity 0.25s ease, transform 0.4s var(--ease-out), background 0.25s ease, border-color 0.25s ease;
+}
+
+.card-overlay.is-open .expanded-card__close { opacity: 1; transform: none; }
+
+.card-overlay.is-open .expanded-card__close:hover {
+  background: rgba(var(--accent-rgb), 0.35);
+  border-color: rgba(var(--accent-rgb), 0.8);
+  transform: rotate(90deg);
+}
+
+/* ---------- Expanded content ---------- */
+.expanded__header {
+  position: relative;
+  text-align: center;
+  padding: 3.5rem 0 2rem;
+}
+
+.expanded__art {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(420px, 90%);
+  transform: translate(-50%, -50%);
+  opacity: 0.35;
+  filter: drop-shadow(0 0 6px rgba(var(--accent-rgb), 0.8));
+  pointer-events: none;
+}
+
+.expanded__symbol {
+  position: relative;
+  font-family: var(--font-symbol);
+  font-size: clamp(4rem, 10vw, 5.5rem);
+  line-height: 1.1;
+  color: var(--accent);
+  text-shadow: 0 0 30px rgba(var(--accent-rgb), 0.8);
+}
+
+.expanded__name {
+  position: relative;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 6vw, 3rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.15;
+  margin-top: 0.4rem;
+}
+
+.expanded__dates {
+  position: relative;
+  color: var(--color-text-muted);
+  letter-spacing: 0.08em;
+  margin: 0.3rem 0 0.8rem;
+}
+
+.expanded__tagline {
+  position: relative;
+  font-family: var(--font-accent);
+  font-style: italic;
+  font-size: 1.15rem;
+  color: rgba(236, 233, 246, 0.85);
+}
+
+.expanded__meta {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.8rem;
+  margin-bottom: 2.4rem;
+}
+
+.expanded__meta-item {
+  padding: 1rem 0.75rem;
+  border-radius: 16px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(var(--accent-rgb), 0.18);
+}
+
+.expanded__meta-item dt {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.expanded__meta-item dd { font-size: 0.95rem; font-weight: 500; }
+
+.expanded__section { margin-bottom: 1.9rem; }
+
+.expanded__section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.75rem;
+}
+
+.expanded__section-title::before {
+  content: '';
+  width: 18px;
+  height: 1px;
+  background: var(--accent);
+}
+
+.expanded__section p {
+  font-size: 0.97rem;
+  line-height: 1.8;
+  color: rgba(236, 233, 246, 0.82);
+}
+
+.expanded__columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 2rem;
+}
+
+.expanded__columns--three { grid-template-columns: repeat(3, 1fr); }
+
+.expanded__tags { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+
+.expanded__tag {
+  padding: 0.32rem 0.85rem;
+  border-radius: 100px;
+  font-size: 0.8rem;
+  background: rgba(var(--accent-rgb), 0.12);
+  border: 1px solid rgba(var(--accent-rgb), 0.3);
+}
+
+.expanded__tags--muted .expanded__tag {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: var(--color-text-muted);
+}
+
+.expanded__divider {
+  border: none;
+  height: 1px;
+  width: 80px;
+  margin: 0.8rem auto 2.4rem;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+}
+
+.expanded__facts li {
+  position: relative;
+  padding: 0.35rem 0 0.35rem 1.5rem;
+  color: rgba(236, 233, 246, 0.82);
+}
+
+.expanded__facts li::before {
+  content: '✦';
+  position: absolute;
+  left: 0;
+  top: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--accent);
+}
+
+/* ============================================================
+   ELEMENTS / ABOUT / FOOTER
+   ============================================================ */
+.elements-section {
+  padding: 8rem 1.5rem 6rem;
+  scroll-snap-align: start;
+}
+
+.elements-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+.element-card {
+  --el: 139, 92, 246;
+  padding: 2.2rem 1.6rem;
+  border-radius: 22px;
+  text-align: center;
+  background: linear-gradient(160deg, rgba(var(--el), 0.14), rgba(255, 255, 255, 0.02) 60%);
+  border: 1px solid rgba(var(--el), 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: transform 0.45s var(--ease-out), box-shadow 0.45s ease, border-color 0.45s ease;
+}
+
+.element-card--fire  { --el: 255, 99, 72; }
+.element-card--earth { --el: 74, 222, 128; }
+.element-card--air   { --el: 125, 211, 252; }
+.element-card--water { --el: 167, 139, 250; }
+
+.element-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(var(--el), 0.5);
+  box-shadow: 0 20px 50px -20px rgba(0, 0, 0, 0.8), 0 0 40px -10px rgba(var(--el), 0.5);
+}
+
+.element-card__icon { font-size: 2.4rem; margin-bottom: 0.8rem; }
+
+.element-card__title {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.4rem;
+  color: rgb(var(--el));
+}
+
+.element-card__signs {
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  margin-bottom: 0.9rem;
+}
+
+.element-card__desc { font-size: 0.9rem; color: rgba(236, 233, 246, 0.75); }
+
+.about-section {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 6rem 1.5rem 7rem;
+  text-align: center;
+}
+
+.about-section__text {
+  color: var(--color-text-muted);
+  line-height: 1.85;
+  margin-top: 1.2rem;
+}
+
+.footer {
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  border-top: 1px solid var(--color-glass-border);
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 1024px) {
+  .deck-hud { max-width: 180px; }
+  .deck-hud__num { font-size: 2.6rem; }
+  .expanded__meta { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 900px) {
+  /* HUD moves to the top center, dots to the bottom */
+  .deck-hud {
+    left: 0;
+    right: 0;
+    top: calc(var(--nav-height) + 0.4rem);
+    transform: none;
+    max-width: none;
+    text-align: center;
+  }
+  .deck-hud__title, .deck-hud__hint { display: none; }
+  .deck-hud__counter { justify-content: center; gap: 0.5rem; }
+  .deck-hud__num { font-size: 1.4rem; text-shadow: none; }
+  .deck-hud__name { flex-basis: auto; font-size: 1.1rem; }
+
+  .deck-dots {
+    top: auto;
+    bottom: max(0.8rem, env(safe-area-inset-bottom));
+    right: 0;
+    left: 0;
+    transform: none;
+    flex-direction: row;
+    justify-content: center;
+    gap: 0;
+  }
+  .deck-dot { width: 24px; height: 32px; }
+
+  .zodiac-card { top: calc(50% + var(--nav-height) / 2 + 0.5rem); }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --nav-height: 58px;
+    --card-w: min(330px, 84vw);
+    --card-h: min(470px, calc(100vh - 200px));
+  }
+  @supports (height: 100svh) {
+    :root { --card-h: min(470px, calc(100svh - 200px)); }
+  }
+
+  .nav__links { display: none; }
+  .nav__hamburger { display: flex; }
+
+  .expanded-card { --pw: 94vw; --ph: 90vh; border-radius: 22px; }
+  @supports (height: 100svh) { .expanded-card { --ph: 90svh; } }
+
+  .expanded__columns,
+  .expanded__columns--three { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 420px) {
+  .zodiac-card__name { font-size: 1.5rem; }
+  .zodiac-card__inner { padding: 1.6rem 1.25rem; }
+  .expanded__meta { gap: 0.5rem; }
+  .expanded__meta-item { padding: 0.8rem 0.5rem; }
+}
+
+@media (max-height: 560px) and (orientation: landscape) {
+  :root { --card-h: calc(100vh - 110px); }
+  .zodiac-card__tagline { display: none; }
+  .zodiac-card__symbol { font-size: 2.8rem; margin-bottom: 0.3rem; }
+}
+
+/* ============================================================
+   REDUCED MOTION
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-snap-type: none; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .hero__zodiac-wheel svg, .nebula__blob { animation: none !important; }
+}

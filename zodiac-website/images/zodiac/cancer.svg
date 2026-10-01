@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="starGlow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <g filter="url(#glow)">
+    <!-- Constellation lines - inverted Y shape -->
+    <line x1="150" y1="160" x2="190" y2="200" stroke="#ffffff" stroke-opacity="0.6" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="190" y1="200" x2="230" y2="180" stroke="#ffffff" stroke-opacity="0.6" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="230" y1="180" x2="270" y2="220" stroke="#ffffff" stroke-opacity="0.6" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="190" y1="200" x2="210" y2="260" stroke="#ffffff" stroke-opacity="0.6" stroke-width="1.5" stroke-linecap="round"/>
+    <!-- Major stars -->
+    <circle cx="150" cy="160" r="4" fill="#ffffff" fill-opacity="0.8" filter="url(#starGlow)"/>
+    <circle cx="190" cy="200" r="5" fill="#ffffff" fill-opacity="0.9" filter="url(#starGlow)"/>
+    <circle cx="230" cy="180" r="4" fill="#ffffff" fill-opacity="0.8" filter="url(#starGlow)"/>
+    <circle cx="270" cy="220" r="4" fill="#ffffff" fill-opacity="0.8" filter="url(#starGlow)"/>
+    <circle cx="210" cy="260" r="4" fill="#ffffff" fill-opacity="0.8" filter="url(#starGlow)"/>
+    <!-- Minor stars - scattered for Beehive cluster feel -->
+    <circle cx="170" cy="178" r="2.5" fill="#ffffff" fill-opacity="0.5"/>
+    <circle cx="210" cy="192" r="2.5" fill="#ffffff" fill-opacity="0.5"/>
+    <circle cx="250" cy="198" r="2.5" fill="#ffffff" fill-opacity="0.5"/>
+    <circle cx="200" cy="230" r="2.5" fill="#ffffff" fill-opacity="0.5"/>
+    <circle cx="180" cy="220" r="2.5" fill="#ffffff" fill-opacity="0.5"/>
+    <circle cx="220" cy="210" r="2.5" fill="#ffffff" fill-opacity="0.5"/>
+    <circle cx="195" cy="215" r="2.5" fill="#ffffff" fill-opacity="0.4"/>
+    <circle cx="205" cy="205" r="2.5" fill="#ffffff" fill-opacity="0.4"/>
+    <circle cx="185" cy="195" r="2.5" fill="#ffffff" fill-opacity="0.4"/>
+    <circle cx="140" cy="180" r="2.5" fill="#ffffff" fill-opacity="0.5"/>
+    <circle cx="280" cy="200" r="2.5" fill="#ffffff" fill-opacity="0.5"/>
+  </g>
+</svg>
